@@ -1,11 +1,16 @@
 3D Earth with Mapbox GL, D3 and A-Frame
 ===
 
-![](https://media.giphy.com/media/3ov9jCDXEVugcTnu5q/giphy.gif)
+![](3d-earth.gif)
 
 My *noob* attempt to create a 3D earth out of [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/) (vector) tiles, using a little of [D3](https://d3js.org/) and [A-Frame](https://aframe.io/).
 
 Note that I'm still figuring out how these WebGL/Canvas/3D/performance thing. **Contributions and pull requests are welcomed!**
+
+Tweets:
+
+- https://twitter.com/cheeaun/status/904317333862203392
+- https://twitter.com/cheeaun/status/904341545293275136
 
 Getting started
 ---
