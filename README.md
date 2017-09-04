@@ -1,7 +1,7 @@
 3D Earth with Mapbox GL, D3 and A-Frame
 ===
 
-<img src"https://media.giphy.com/media/3ov9jCDXEVugcTnu5q/giphy.gif" width="200">
+![](https://media.giphy.com/media/3ov9jCDXEVugcTnu5q/giphy.gif)
 
 My *noob* attempt to create a 3D earth out of [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/) (vector) tiles, using a little of [D3](https://d3js.org/) and [A-Frame](https://aframe.io/).
 
