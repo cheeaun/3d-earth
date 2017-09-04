@@ -7,6 +7,8 @@ My *noob* attempt to create a 3D earth out of [Mapbox GL](https://www.mapbox.com
 
 Note that I'm still figuring out how these WebGL/Canvas/3D/performance thing. **Contributions and pull requests are welcomed!**
 
+**NOTE**: Test only on Chrome Mac for now. Doesn't work on Safari or iOS due to some WebGL support errors on A-Frame.
+
 Tweets:
 
 - https://twitter.com/cheeaun/status/904317333862203392
