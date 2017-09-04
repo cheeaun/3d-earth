@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>3D Earth with Mapbox GL, D3 and A-Frame</title>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.css">
+<style>
+html { background-color: #000; color: #fff; font-family: sans-serif; }
+#map { position: absolute; opacity: 0; pointer-events: none; }
+#equirectangular-map { position: absolute; opacity: 0; pointer-events: none; }
+#loader { position: absolute; left: 10px; top: 10px; }
+#style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
+footer { position: absolute; bottom: 10px; right: 10px; opacity: .75; }
+footer a { color: inherit; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/0.6.1/aframe-master.min.js"></script>
+<script src="https://unpkg.com/aframe-orbit-controls-component-2@0.1.12/index.js"></script>
+<div id="map"></div>
+<canvas id="equirectangular-map"></canvas>
+<a-scene id="sphere" vr-mode-ui="enabled: false">
+  <a-entity
+    camera="fov: 80; zoom: 1;"
+    orbit-controls="target: #image; autoRotate: true; maxDistance: 10; minDistance: 3;"
+  >
+  </a-entity>
+  <a-sphere id="image" color="#ccc" position="0 1.5 -4" radius="2"></a-sphere>
+</a-scene>
+<div id="loader">Loading&hellip;</div>
+<select id="style-selector" onChange="changeStyle(this.value)">
+  <option value="satellite" selected>Satellite</option>
+  <option value="streets">Streets</option>
+  <option value="dark">Dark</option>
+  <option value="light">Light</option>
+</select>
+<footer>
+  <a href="https://github.com/cheeaun/3d-earth" target="_blank">Learn more on GitHub</a>
+</footer>
+<script src="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.1/d3.min.js"></script>
+<script>
+var mapWidth = 2400;
+var mapHeight = 2400;
+// Can bump up these values for higher resolution
+
+var $map = document.getElementById('map');
+$map.style.width = mapWidth + 'px';
+$map.style.height = mapHeight + 'px';
+
+mapboxgl.accessToken = 'pk.eyJ1IjoiY2hlZWF1biIsImEiOiJjaXhmb3o3bTEwMDAzMnRudTJuNjh1eXQ1In0.yO6WeKJwx6yIPoVx5aPavQ';
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/satellite-v9?optimize=true',
+  center: [0, 0],
+  zoom: 2,
+  interactive: false,
+  renderWorldCopies: false,
+  attributionControl: false,
+  trackResize: false,
+});
+
+var $eMap = document.getElementById('equirectangular-map');
+var $loader = document.getElementById('loader');
+
+var $sphere = document.querySelector('#image');
+$sphere.setAttribute('src', '#equirectangular-map');
+
+var $styleSelector = document.getElementById('style-selector');
+var mapStyle = 'satellite';
+function changeStyle(style){
+  console.log('New style: ' + style);
+  mapStyle = style;
+  map.setStyle('mapbox://styles/mapbox/' + style + '-v9?optimize=true');
+}
+
+map.on('load', function(){
+  var canvas = document.querySelector("#map canvas");
+  var dx = canvas.width;
+  var dy = canvas.height;
+  var width = mapWidth*2;
+  var height = mapHeight*2;
+
+  var equirectangular = d3.geoEquirectangular()
+    .scale(height / (2 * Math.PI))
+    .translate([width / 2, height / 2]);
+
+  var mercator = d3.geoMercator()
+    .scale(width / (2 * Math.PI))
+    .translate([width / 2, height / 2]);
+
+  var gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+
+  var currentStyle = null;
+  function render(){
+    if (!map.areTilesLoaded() || !map.isStyleLoaded()) return;
+    if (currentStyle == mapStyle) return;
+    currentStyle = mapStyle;
+
+    console.log('Style loaded');
+    $styleSelector.disabled = true;
+    $loader.hidden = false;
+
+    setTimeout(function(){
+      console.log('Render map start');
+      var source = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+      gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      var sourceData = new Uint8ClampedArray(source.buffer);
+      var targetData = new Uint8ClampedArray(sourceData.length);
+
+      // This part is really slow >:(
+      console.time('Reprojection');
+      var w = width;
+      var h = height;
+      for (var x = 0; x < w; x++){
+        for (var y = 0; y < h; y++){
+          var coords = equirectangular.invert([x, y]);
+          if (!isNaN(coords[0]) && !isNaN(coords[1])){
+            var pixels = mercator(coords);
+            var sourceIndex = 4 * (Math.floor(pixels[0]) + w * Math.floor(pixels[1]));
+            sourceIndex = sourceIndex - (sourceIndex % 4);
+            var targetIndex = 4 * (x + w * y);
+            targetIndex = targetIndex - (targetIndex % 4);
+            targetData[targetIndex] = sourceData[sourceIndex];
+            targetData[targetIndex + 1] = sourceData[sourceIndex + 1];
+            targetData[targetIndex + 2] = sourceData[sourceIndex + 2];
+            targetData[targetIndex + 3] = 255;
+          }
+        }
+      }
+      console.timeEnd('Reprojection');
+
+      var context = $eMap.getContext('2d', { alpha: false });
+      var target = context.createImageData(width, height);
+      target.data.set(targetData);
+
+      // No idea why the height suddenly change
+      // Should have been `height/2` (1200) but somehow the reprojection returns this
+      var newHeight = 1135*2;
+
+      $eMap.width = width;
+      $eMap.height = newHeight;
+      context.clearRect(0, 0, width, newHeight);
+      context.putImageData(target, 0, -633*2);
+      context.translate(0, newHeight);
+      context.scale(1, -1);
+      context.drawImage($eMap, 0, 0);
+      console.log('Render map end');
+      $styleSelector.disabled = false;
+      $loader.hidden = true;
+    }, 300); // Delay for the tiles to render properly
+  };
+
+  render();
+  map.on('render', render);
+});
+</script>
