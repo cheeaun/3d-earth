@@ -111,19 +111,14 @@ map.on('load', function(){
       var y;
       for (; x < w; x++){
         for (y = 0; y < h; y++){
-          var coords = equirectangular.invert([x, y]);
-          if (!isNaN(coords[0]) && !isNaN(coords[1])){
-            var pixels = mercator(coords);
-            if (!isNaN(pixels[0]) && !isNaN(pixels[1])){
-              var sourceIndex = 4 * (~~(pixels[0]) + w * ~~(pixels[1]));
-              sourceIndex = sourceIndex - (sourceIndex % 4);
-              var targetIndex = 4 * (x + w * y);
-              targetIndex = targetIndex - (targetIndex % 4);
-              targetData[targetIndex] = sourceData[sourceIndex];
-              targetData[targetIndex + 1] = sourceData[sourceIndex + 1];
-              targetData[targetIndex + 2] = sourceData[sourceIndex + 2];
-              targetData[targetIndex + 3] = 255;
-            }
+          var pixels = mercator(equirectangular.invert([x, y]));
+          if (!isNaN(pixels[1])){
+            var sourceIndex = 4 * (~~pixels[0] + w * ~~pixels[1]);
+            var targetIndex = 4 * (x + w * y);
+            targetData[targetIndex] = sourceData[sourceIndex];
+            targetData[targetIndex + 1] = sourceData[sourceIndex + 1];
+            targetData[targetIndex + 2] = sourceData[sourceIndex + 2];
+            targetData[targetIndex + 3] = 255;
           }
         }
       }
