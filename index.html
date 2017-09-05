@@ -82,6 +82,8 @@ var mercator = d3.geoMercator()
   .scale(width / (2 * Math.PI))
   .translate([width / 2, height / 2]);
 
+var invert = equirectangular.invert;
+
 map.on('load', function(){
   var canvas = map.getCanvas();
   var gl = canvas.getContext('webgl', { alpha: false, antialias: false });
@@ -111,7 +113,7 @@ map.on('load', function(){
       var y;
       for (; x < w; x++){
         for (y = 0; y < h; y++){
-          var pixels = mercator(equirectangular.invert([x, y]));
+          var pixels = mercator(invert([x, y]));
           if (!isNaN(pixels[1])){
             var sourceIndex = 4 * (~~pixels[0] + w * ~~pixels[1]);
             var targetIndex = 4 * (x + w * y);
