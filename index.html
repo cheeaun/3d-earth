@@ -101,7 +101,7 @@ map.on('load', function(){
       var source = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
       gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, source);
       var sourceData = new Uint8ClampedArray(source.buffer);
-      var targetData = new Uint8ClampedArray(sourceData.length);
+      var targetData = new Uint8ClampedArray(sourceData.length).fill(255);
 
       // This part is really slow >:(
       console.time('Reprojection');
@@ -118,7 +118,7 @@ map.on('load', function(){
             targetData[targetIndex] = sourceData[sourceIndex];
             targetData[targetIndex + 1] = sourceData[sourceIndex + 1];
             targetData[targetIndex + 2] = sourceData[sourceIndex + 2];
-            targetData[targetIndex + 3] = 255;
+            // targetData[targetIndex + 3] = 255; // Already filled
           }
         }
       }
