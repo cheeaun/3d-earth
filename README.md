@@ -1,13 +1,11 @@
-3D Earth with Mapbox GL, D3 and A-Frame
+3D Earth with Mapbox GL, D3.js and Three.js
 ===
 
 ![](3d-earth.gif)
 
-My *noob* attempt to create a 3D earth out of [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/) (vector) tiles, using a little of [D3](https://d3js.org/) and [A-Frame](https://aframe.io/).
+My *noob* attempt to create a 3D earth out of [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/) (vector) tiles, using a little of [D3](https://d3js.org/) and [Three.js](https://threejs.org/).
 
 Note that I'm still figuring out how these WebGL/Canvas/3D/performance thing. **Contributions and pull requests are welcomed!**
-
-**NOTE**: Test only on Chrome Mac for now. Doesn't work on Safari or iOS due to some WebGL support errors on A-Frame.
 
 Tweets:
 
@@ -23,23 +21,27 @@ Getting started
 Todos (Contributions welcomed!)
 ---
 
-- Better performance with the raster reprojection
-- Less CPU usage
-- Fix the weird equirectangular dimension
-- Replace A-frame with ThreeJS? (*tentative*)
+- [x] Replace A-frame with ThreeJS?
+- [ ] Better performance with the raster reprojection
+- [ ] Less CPU usage
+- [ ] Fix the weird equirectangular dimension
 
 Resources
 ---
-
-*Sorted by importance*
 
 - https://blog.mapbox.com/mapbox-gl-js-ar-js-a-frame-vr-mapbox-ar-vr-93c09be08742
 - https://aframe.io/docs/
 - http://hanmomhanda.github.io/mastering-d3-html/chapter11/05-raster/
 - https://bl.ocks.org/rasmuse/75fae4fee3354ec41a49d10fb37af551
 - https://github.com/rasmuse/d3-geo-warp
-- https://bl.ocks.org/mbostock/4329423
-- https://github.com/tizzle/aframe-orbit-controls-component
 - https://github.com/d3/d3-geo/
+- https://bl.ocks.org/mbostock/4329423
+- https://threejs.org/examples/software_geometry_earth.html
+- https://github.com/miguelmota/threejs-earth
+- https://github.com/yomotsu/camera-controls
+- https://threejs.org/docs/#api/geometries/SphereGeometry
 - https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext
 - https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+- https://github.com/tizzle/aframe-orbit-controls-component
+- https://github.com/mrdoob/three.js/issues/9716
+- https://stackoverflow.com/questions/7156971/webgl-readpixels-is-always-returning-0-0-0-0

@@ -1,31 +1,21 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>3D Earth with Mapbox GL, D3 and A-Frame</title>
-<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.css">
+<title>3D Earth with Mapbox GL, D3.js and Three.js</title>
 <style>
+html, body { margin: 0; padding: 0; }
 html { background-color: #000; color: #fff; font-family: sans-serif; }
 #map { position: absolute; opacity: 0; pointer-events: none; }
-#equirectangular-map { pointer-events: none; }
+#equirectangular-map { position: absolute; opacity: 0; pointer-events: none; }
 #loader { position: absolute; left: 10px; top: 10px; }
 #style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
+#container > div { bottom: 0; top: auto !important; }
 footer { position: absolute; bottom: 10px; right: 10px; opacity: .75; }
 footer a { color: inherit; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/0.6.1/aframe-master.min.js"></script>
-<script src="https://unpkg.com/aframe-orbit-controls-component-2@0.1.12/index.js"></script>
 <div id="map"></div>
-<a-scene id="sphere" vr-mode-ui="enabled: false">
-  <a-assets>
-    <canvas id="equirectangular-map"></canvas>
-  </a-assets>
-  <a-entity
-    camera="fov: 80; zoom: 1;"
-    orbit-controls="target: #image; autoRotate: true; maxDistance: 10; minDistance: 4;"
-  >
-  </a-entity>
-  <a-sphere id="image" color="#ccc" position="0 1.5 -4" radius="2" src="#equirectangular-map"></a-sphere>
-</a-scene>
+<canvas id="equirectangular-map"></canvas>
+<div id="container"></div>
 <div id="loader">Loading&hellip;</div>
 <select id="style-selector" onChange="changeStyle(this.value)">
   <option value="satellite" selected>Satellite</option>
@@ -37,7 +27,10 @@ footer a { color: inherit; }
   <a href="https://github.com/cheeaun/3d-earth" target="_blank">Learn more on GitHub</a>
 </footer>
 <script src="https://api.mapbox.com/mapbox-gl-js/v0.39.1/mapbox-gl.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.1/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-geo/1.6.4/d3-geo.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.min.js"></script>
+<script src="https://unpkg.com/camera-controls@0.0.6/dist/camera-controls.min.js"></script>
+<script src="https://rawgit.com/mrdoob/stats.js/master/build/stats.min.js"></script>
 <script>
 var mapWidth = 1200;
 var mapHeight = 1200;
@@ -57,6 +50,7 @@ var map = new mapboxgl.Map({
   renderWorldCopies: false,
   attributionControl: false,
   trackResize: false,
+  preserveDrawingBuffer: true,
 });
 
 var $eMap = document.getElementById('equirectangular-map');
@@ -83,6 +77,67 @@ var mercator = d3.geoMercator()
   .translate([width / 2, height / 2]);
 
 var invert = equirectangular.invert;
+
+var container = document.getElementById('container');
+var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 2000);
+camera.position.z = 500;
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+var texture = new THREE.CanvasTexture($eMap);
+texture.minFilter = THREE.LinearFilter;
+var geometry = new THREE.SphereGeometry(200, 30, 30);
+var material = new THREE.MeshBasicMaterial({
+  overdraw: .5, // fill in the gaps between triangles
+});
+var mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+var renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  stencil: false,
+});
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.context.getShaderInfoLog = function(){ return '' };
+container.appendChild(renderer.domElement);
+
+var CameraControls = cameraControlsFactory(THREE);
+var cameraControls = new CameraControls(camera, renderer.domElement);
+cameraControls.rotate(0, -.8, true);
+cameraControls.update();
+
+var stats = new Stats();
+// stats.showPanel(1);
+container.appendChild(stats.domElement);
+
+// Hack cameraControls to have min & max distance
+var _dolly = cameraControls.dolly;
+cameraControls.dolly = function(distance, enableTransition){
+  var d = Math.abs(distance);
+  if (d < 18 || d > 60) return;
+  _dolly.call(cameraControls, distance, enableTransition);
+}
+
+window.addEventListener('resize', function(){
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+},false);
+
+function animate(){
+  requestAnimationFrame(animate);
+  render();
+  stats.update();
+}
+
+const clock = new THREE.Clock();
+function render(){
+  var delta = clock.getDelta();
+  cameraControls.update(delta);
+  mesh.rotation.y += .003;
+  renderer.render(scene, camera);
+}
+animate();
 
 map.on('load', function(){
   var canvas = map.getCanvas();
@@ -142,8 +197,15 @@ map.on('load', function(){
       context.scale(1, -1);
       context.drawImage($eMap, 0, 0);
       console.log('Render map end');
+
       $styleSelector.disabled = false;
       $loader.hidden = true;
+
+      if (!material.map){
+        material.map = texture;
+        material.needsUpdate = true;
+      }
+      texture.needsUpdate = true;
     }, 350); // Delay for the tiles to render properly
   };
 
