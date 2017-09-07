@@ -84,7 +84,7 @@ camera.position.z = 500;
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 var texture = new THREE.CanvasTexture($eMap);
-texture.minFilter = THREE.LinearFilter;
+texture.minFilter = THREE.LinearFilter; // Fix "Textures should be of a power of two" warning
 var geometry = new THREE.SphereGeometry(200, 30, 30);
 var material = new THREE.MeshBasicMaterial({
   overdraw: .5, // fill in the gaps between triangles
