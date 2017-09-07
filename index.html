@@ -70,11 +70,11 @@ var width = mapWidth*2;
 var height = mapHeight*2;
 
 var equirectangular = d3.geoEquirectangular()
-  .scale(height / (2 * Math.PI))
-  .translate([width / 2, height / 2]);
+  .scale(width / 2 / Math.PI)
+  .translate([width / 2, height / 4]);
 
 var mercator = d3.geoMercator()
-  .scale(width / (2 * Math.PI))
+  .scale(width / 2 / Math.PI)
   .translate([width / 2, height / 2]);
 
 var invert = equirectangular.invert;
@@ -194,17 +194,44 @@ map.on('load', function(){
       var target = context.createImageData(width, height);
       target.data.set(targetData);
 
-      // No idea why the height suddenly change
-      // Should have been `height/2` (1200) but somehow the reprojection returns this
-      var newHeight = 1135;
+      // Mercator (1:1) -> Equirectangular (2:1)
+      var newHeight = height/2;
 
+      // Draw the equirectangular projection canvas
       $eMap.width = width;
       $eMap.height = newHeight;
       context.clearRect(0, 0, width, newHeight);
-      context.putImageData(target, 0, -633);
+      context.putImageData(target, 0, 0);
+
+      // Cover the South pole
+      for (var y=0; y<newHeight; y++){
+        var index = y * w * 4;
+        var firstColor = targetData[index];
+        if (firstColor !== 0){
+          var color = 'rgb(' + targetData[index] + ',' + targetData[index+1] + ',' + targetData[index+2] + ')';
+          context.fillStyle = color;
+          context.fillRect(0, 0, w, y);
+          break;
+        }
+      }
+
+      // Cover the North pole
+      for (var y=newHeight-1; y>=0; --y){
+        var index = y * w * 4;
+        var firstColor = targetData[index];
+        if (firstColor !== 0){
+          var color = 'rgb(' + targetData[index] + ',' + targetData[index+1] + ',' + targetData[index+2] + ')';
+          context.fillStyle = color;
+          context.fillRect(0, y+1, w, newHeight-y);
+          break;
+        }
+      }
+
+      // Flip vertically
       context.translate(0, newHeight);
       context.scale(1, -1);
       context.drawImage($eMap, 0, 0);
+
       console.log('Render map end');
 
       $styleSelector.disabled = false;
