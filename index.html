@@ -118,7 +118,6 @@ cameraControls.dolly = function(distance, enableTransition){
   _dolly.call(cameraControls, distance, enableTransition);
 }
 
-window.addEventListener('resize', function(){
 var stopRotating = false;
 container.ontouchstart = container.onmousedown = function(){
   stopRotating = true;
@@ -127,10 +126,11 @@ container.ontouchend = container.ontouchcancel = container.onmouseup = function(
   stopRotating = false;
 }
 
+window.onresize = function(){
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-},false);
+}
 
 function animate(){
   requestAnimationFrame(animate);
