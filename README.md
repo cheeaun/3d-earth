@@ -22,9 +22,9 @@ Todos (Contributions welcomed!)
 ---
 
 - [x] Replace A-frame with ThreeJS?
+- [x] Fix the weird equirectangular dimension (actually not weird)
 - [ ] Better performance with the raster reprojection
 - [ ] Less CPU usage
-- [ ] Fix the weird equirectangular dimension
 
 Resources
 ---
