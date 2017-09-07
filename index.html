@@ -119,6 +119,14 @@ cameraControls.dolly = function(distance, enableTransition){
 }
 
 window.addEventListener('resize', function(){
+var stopRotating = false;
+container.ontouchstart = container.onmousedown = function(){
+  stopRotating = true;
+}
+container.ontouchend = container.ontouchcancel = container.onmouseup = function(){
+  stopRotating = false;
+}
+
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -134,7 +142,7 @@ const clock = new THREE.Clock();
 function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
-  mesh.rotation.y += .003;
+  if (!stopRotating) mesh.rotation.y += .003;
   renderer.render(scene, camera);
 }
 animate();
