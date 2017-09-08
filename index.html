@@ -7,6 +7,7 @@ html, body { margin: 0; padding: 0; overflow: hidden; }
 html { background-color: #000; color: #fff; font-family: sans-serif; }
 #map { position: absolute; pointer-events: none; right: 0; bottom: 0; transform: scale(.25); transform-origin: bottom right; opacity: 0; }
 #equirectangular-map { position: absolute; width: 300px; pointer-events: none; right: 0; opacity: 0; }
+.DEBUG #map, .DEBUG #equirectangular-map { opacity: 1; }
 #loader { position: absolute; left: 10px; top: 10px; }
 #style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
 #container canvas { vertical-align: top; }
@@ -35,7 +36,7 @@ footer a { color: inherit; }
 <script>
 var mapWidth = 1200;
 var mapHeight = 1200;
-// Can bump up these values for higher resolution
+var DEBUG = location.hash == '#DEBUG';
 
 var $map = document.getElementById('map');
 $map.style.width = mapWidth + 'px';
@@ -110,16 +111,18 @@ var cameraControls = new CameraControls(camera, renderer.domElement);
 cameraControls.rotate(0, -.8, true); // Tilt down to show North pole a bit
 cameraControls.update();
 
-var stats = new Stats();
-// stats.showPanel(1);
-container.appendChild(stats.domElement);
-
 // Hack cameraControls to have min & max distance
 var _dolly = cameraControls.dolly;
 cameraControls.dolly = function(distance, enableTransition){
   var d = Math.abs(distance);
   if (d < 18 || d > 60) return;
   _dolly.call(cameraControls, distance, enableTransition);
+}
+
+// Stats: https://github.com/mrdoob/stats.js
+if (DEBUG){
+  var stats = new Stats();
+  container.appendChild(stats.domElement);
 }
 
 // Stop auto-rotating earth when dragging it
@@ -137,18 +140,18 @@ window.onresize = function(){
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function animate(){
-  requestAnimationFrame(animate);
-  render();
-  stats.update();
-}
-
 const clock = new THREE.Clock();
 function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
   if (!stopRotating) mesh.rotation.y += .003;
   renderer.render(scene, camera);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  render();
+  if (DEBUG) stats.update();
 }
 animate();
 
@@ -251,4 +254,9 @@ map.on('load', function(){
   render();
   map.on('render', render);
 });
+
+// Debugging
+if (DEBUG){
+  document.body.className = 'DEBUG';
+}
 </script>
