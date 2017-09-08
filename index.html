@@ -238,10 +238,12 @@ map.on('load', function(){
       $styleSelector.disabled = false;
       $loader.hidden = true;
 
+      // Set texture on first load
       if (!material.map){
         material.map = texture;
         material.needsUpdate = true;
       }
+      // Update texture
       texture.needsUpdate = true;
     }, 350); // Delay for the tiles to render properly
   };
