@@ -73,7 +73,7 @@ var height = mapHeight * dpr;
 
 var equirectangular = d3.geoEquirectangular()
   .scale(width / 2 / Math.PI)
-  .translate([width / 2, height / 4]);
+  .translate([width / 2, height * .75]);
 
 var mercator = d3.geoMercator()
   .scale(width / 2 / Math.PI)
@@ -184,7 +184,9 @@ map.on('load', function(){
           var pixels = mercator(invert([x, y]));
           if (!isNaN(pixels[1])){
             var sourceIndex = 4 * (~~pixels[0] + w * ~~pixels[1]);
-            var targetIndex = 4 * (x + w * y);
+            // Would have been x + w + h if it's not WebGL context
+            // (h-y-1) is to flip the Y (vertical) because WebGL texture starts at the bottom
+            var targetIndex = 4 * (x + w * (h-y-1));
             targetData[targetIndex] = sourceData[sourceIndex];
             targetData[targetIndex + 1] = sourceData[sourceIndex + 1];
             targetData[targetIndex + 2] = sourceData[sourceIndex + 2];
@@ -207,7 +209,7 @@ map.on('load', function(){
       context.clearRect(0, 0, width, newHeight);
       context.putImageData(target, 0, 0);
 
-      // Cover the South pole
+      // Cover the North pole
       for (var y=0; y<newHeight; y++){
         var index = y * w * 4;
         var firstColor = targetData[index];
@@ -219,7 +221,7 @@ map.on('load', function(){
         }
       }
 
-      // Cover the North pole
+      // Cover the South pole
       for (var y=newHeight-1; y>=0; --y){
         var index = y * w * 4;
         var firstColor = targetData[index];
@@ -230,11 +232,6 @@ map.on('load', function(){
           break;
         }
       }
-
-      // Flip vertically
-      context.translate(0, newHeight);
-      context.scale(1, -1);
-      context.drawImage($eMap, 0, 0);
 
       console.log('Render map end');
 
