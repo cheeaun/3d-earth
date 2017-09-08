@@ -122,6 +122,7 @@ cameraControls.dolly = function(distance, enableTransition){
   _dolly.call(cameraControls, distance, enableTransition);
 }
 
+// Stop auto-rotating earth when dragging it
 var stopRotating = false;
 container.ontouchstart = container.onmousedown = function(){
   stopRotating = true;
