@@ -106,7 +106,7 @@ container.appendChild(renderer.domElement);
 
 var CameraControls = cameraControlsFactory(THREE);
 var cameraControls = new CameraControls(camera, renderer.domElement);
-cameraControls.rotate(0, -.8, true);
+cameraControls.rotate(0, -.8, true); // Tilt down to show North pole a bit
 cameraControls.update();
 
 var stats = new Stats();
