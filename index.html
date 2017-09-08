@@ -19,7 +19,7 @@ footer a { color: inherit; }
 <canvas id="equirectangular-map"></canvas>
 <div id="container"></div>
 <div id="loader">Loading&hellip;</div>
-<select id="style-selector" onChange="changeStyle(this.value)">
+<select id="style-selector" onChange="generateMap(this.value)">
   <option value="satellite" selected>Satellite</option>
   <option value="streets">Streets</option>
   <option value="dark">Dark</option>
@@ -34,54 +34,29 @@ footer a { color: inherit; }
 <script src="https://unpkg.com/camera-controls@0.0.6/dist/camera-controls.min.js"></script>
 <script src="https://rawgit.com/mrdoob/stats.js/master/build/stats.min.js"></script>
 <script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiY2hlZWF1biIsImEiOiJjaXhmb3o3bTEwMDAzMnRudTJuNjh1eXQ1In0.yO6WeKJwx6yIPoVx5aPavQ';
+
 var mapWidth = 1200;
 var mapHeight = 1200;
 var DEBUG = location.hash == '#DEBUG';
 
 var $map = document.getElementById('map');
-$map.style.width = mapWidth + 'px';
-$map.style.height = mapHeight + 'px';
-
-mapboxgl.accessToken = 'pk.eyJ1IjoiY2hlZWF1biIsImEiOiJjaXhmb3o3bTEwMDAzMnRudTJuNjh1eXQ1In0.yO6WeKJwx6yIPoVx5aPavQ';
-var map = new mapboxgl.Map({
-  container: 'map',
-  // optimize=true -> https://blog.mapbox.com/style-optimized-vector-tiles-39868da81275
-  style: 'mapbox://styles/mapbox/satellite-v9?optimize=true',
-  center: [0, 0],
-  zoom: 1,
-  interactive: false,
-  renderWorldCopies: false,
-  attributionControl: false,
-  trackResize: false,
-  preserveDrawingBuffer: true,
-});
-
 var $eMap = document.getElementById('equirectangular-map');
 var $loader = document.getElementById('loader');
-
 var $styleSelector = document.getElementById('style-selector');
-var mapStyle = 'satellite';
-function changeStyle(style){
-  console.log('New style: ' + style);
-  mapStyle = style;
-  map.setStyle('mapbox://styles/mapbox/' + style + '-v9?optimize=true');
-  $styleSelector.disabled = true;
-}
+
+$map.style.width = mapWidth + 'px';
+$map.style.height = mapHeight + 'px';
 
 var dpr = window.devicePixelRatio;
 var width = mapWidth * dpr;
 var height = mapHeight * dpr;
+var halfHeight = height / 2;
 
-var equirectangular = d3.geoEquirectangular()
-  .scale(width / 2 / Math.PI)
-  .translate([width / 2, height * .75]);
+$eMap.width = width;
+$eMap.height = halfHeight;
 
-var mercator = d3.geoMercator()
-  .scale(width / 2 / Math.PI)
-  .translate([width / 2, height / 2]);
-
-var invert = equirectangular.invert;
-
+// 3D stuff
 var container = document.getElementById('container');
 var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 2000);
 camera.position.z = 500;
@@ -155,17 +130,36 @@ function animate(){
 }
 animate();
 
-map.on('load', function(){
-  var canvas = map.getCanvas();
-  var gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+// Projections stuff
+var equirectangular = d3.geoEquirectangular()
+  .scale(width / 2 / Math.PI)
+  .translate([width / 2, height * .75]);
+var mercator = d3.geoMercator()
+  .scale(width / 2 / Math.PI)
+  .translate([width / 2, height / 2]);
+var invert = equirectangular.invert;
 
-  var currentStyle = null;
-  function render(){
-    if (!map.areTilesLoaded() || !map.isStyleLoaded()) return;
-    if (currentStyle == mapStyle) return;
-    currentStyle = mapStyle;
+var context = $eMap.getContext('2d', { alpha: false });
+function generateMap(style){
+  console.log('Generate map: ' + style);
+  var map = new mapboxgl.Map({
+    container: 'map',
+    // optimize=true -> https://blog.mapbox.com/style-optimized-vector-tiles-39868da81275
+    style: 'mapbox://styles/mapbox/' + style + '-v9?optimize=true',
+    center: [0, 0],
+    zoom: 1,
+    interactive: false,
+    renderWorldCopies: false,
+    attributionControl: false,
+    trackResize: false,
+    preserveDrawingBuffer: true,
+  });
 
-    console.log('Style loaded');
+  map.on('load', function(){
+    var canvas = map.getCanvas();
+    var gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+
+    console.log('Map loaded');
     $styleSelector.disabled = true;
     $loader.hidden = false;
 
@@ -174,7 +168,7 @@ map.on('load', function(){
       var source = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
       gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, source);
       var sourceData = new Uint8ClampedArray(source.buffer);
-      var targetData = new Uint8ClampedArray(sourceData.length).fill(255);
+      var targetData = new Uint8ClampedArray(sourceData.length/2).fill(255);
 
       // This part is really slow >:(
       console.time('Reprojection');
@@ -199,21 +193,16 @@ map.on('load', function(){
       }
       console.timeEnd('Reprojection');
 
-      var context = $eMap.getContext('2d', { alpha: false });
-      var target = context.createImageData(width, height);
+      // $eMap.width = $eMap.width;
+      var target = context.createImageData(width, halfHeight);
       target.data.set(targetData);
 
-      // Mercator (1:1) -> Equirectangular (2:1)
-      var newHeight = height/2;
-
       // Draw the equirectangular projection canvas
-      $eMap.width = width;
-      $eMap.height = newHeight;
-      context.clearRect(0, 0, width, newHeight);
+      context.clearRect(0, 0, $eMap.width, $eMap.height);
       context.putImageData(target, 0, 0);
 
       // Cover the North pole
-      for (var y=0; y<newHeight; y++){
+      for (var y=0; y<halfHeight; y++){
         var index = y * w * 4;
         var firstColor = targetData[index];
         if (firstColor !== 0){
@@ -225,13 +214,13 @@ map.on('load', function(){
       }
 
       // Cover the South pole
-      for (var y=newHeight-1; y>=0; --y){
+      for (var y=halfHeight-1; y>=0; --y){
         var index = y * w * 4;
         var firstColor = targetData[index];
         if (firstColor !== 0){
           var color = 'rgb(' + targetData[index] + ',' + targetData[index+1] + ',' + targetData[index+2] + ')';
           context.fillStyle = color;
-          context.fillRect(0, y+1, w, newHeight-y);
+          context.fillRect(0, y+1, w, halfHeight-y);
           break;
         }
       }
@@ -248,12 +237,12 @@ map.on('load', function(){
       }
       // Update texture
       texture.needsUpdate = true;
-    }, 350); // Delay for the tiles to render properly
-  };
 
-  render();
-  map.on('render', render);
-});
+      map.remove();
+    }, 350); // Delay for the tiles to render properly
+  });
+};
+generateMap('satellite');
 
 // Debugging
 if (DEBUG){
