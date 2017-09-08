@@ -44,6 +44,7 @@ $map.style.height = mapHeight + 'px';
 mapboxgl.accessToken = 'pk.eyJ1IjoiY2hlZWF1biIsImEiOiJjaXhmb3o3bTEwMDAzMnRudTJuNjh1eXQ1In0.yO6WeKJwx6yIPoVx5aPavQ';
 var map = new mapboxgl.Map({
   container: 'map',
+  // optimize=true -> https://blog.mapbox.com/style-optimized-vector-tiles-39868da81275
   style: 'mapbox://styles/mapbox/satellite-v9?optimize=true',
   center: [0, 0],
   zoom: 1,
