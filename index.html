@@ -101,6 +101,7 @@ var renderer = new THREE.WebGLRenderer({
 });
 renderer.setPixelRatio(dpr);
 renderer.setSize(window.innerWidth, window.innerHeight);
+// Fix "GL_ARB_gpu_shader5" bug: https://github.com/mrdoob/three.js/issues/9716
 renderer.context.getShaderInfoLog = function(){ return '' };
 container.appendChild(renderer.domElement);
 
