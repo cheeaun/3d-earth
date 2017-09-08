@@ -67,8 +67,9 @@ function changeStyle(style){
   $styleSelector.disabled = true;
 }
 
-var width = mapWidth*2;
-var height = mapHeight*2;
+var dpr = window.devicePixelRatio;
+var width = mapWidth * dpr;
+var height = mapHeight * dpr;
 
 var equirectangular = d3.geoEquirectangular()
   .scale(width / 2 / Math.PI)
@@ -98,7 +99,7 @@ var renderer = new THREE.WebGLRenderer({
   antialias: true,
   stencil: false,
 });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(dpr);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.context.getShaderInfoLog = function(){ return '' };
 container.appendChild(renderer.domElement);
