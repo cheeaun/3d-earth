@@ -119,7 +119,7 @@ const clock = new THREE.Clock();
 function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
-  if (!stopRotating) mesh.rotation.y += .003;
+  if (!stopRotating) mesh.rotation.y += .001;
   renderer.render(scene, camera);
 }
 
