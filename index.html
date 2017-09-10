@@ -11,12 +11,16 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; }
 .DEBUG #map, .DEBUG #equirectangular-map { opacity: 1; }
 #map { bottom: 0; transform: scale(.1); transform-origin: bottom right; }
 #equirectangular-map { transform: scale(.1); transform-origin: top right; }
-#loader { position: absolute; left: 10px; top: 10px; }
 #style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
 #container canvas { vertical-align: top; }
 #container > div { bottom: 0; top: auto !important; }
 footer { position: absolute; bottom: 10px; right: 10px; opacity: .75; }
 footer a { color: inherit; }
+#loader { position: absolute; left: 10px; top: 10px; animation: fade .5s infinite ease-in-out alternate; }
+@keyframes fade {
+  0% { opacity: .3 }
+  100% { opacity: 1 }
+}
 </style>
 <div id="map"></div>
 <canvas id="equirectangular-map"></canvas>
