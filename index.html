@@ -5,9 +5,12 @@
 <style>
 html, body { margin: 0; padding: 0; overflow: hidden; }
 html { background-color: #000; color: #fff; font-family: sans-serif; }
-#map { position: absolute; pointer-events: none; right: 0; bottom: 0; transform: scale(.25); transform-origin: bottom right; opacity: 0; }
-#equirectangular-map { position: absolute; width: 300px; pointer-events: none; right: 0; opacity: 0; }
+select { font: inherit; }
+canvas { image-rendering: crisp-edges; image-rendering: pixelated; }
+#map, #equirectangular-map { position: absolute; pointer-events: none; right: 0; opacity: 0; }
 .DEBUG #map, .DEBUG #equirectangular-map { opacity: 1; }
+#map { bottom: 0; transform: scale(.1); transform-origin: bottom right; }
+#equirectangular-map { transform: scale(.1); transform-origin: top right; }
 #loader { position: absolute; left: 10px; top: 10px; }
 #style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
 #container canvas { vertical-align: top; }
@@ -36,8 +39,9 @@ footer a { color: inherit; }
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiY2hlZWF1biIsImEiOiJjaXhmb3o3bTEwMDAzMnRudTJuNjh1eXQ1In0.yO6WeKJwx6yIPoVx5aPavQ';
 
-var mapWidth = 1200;
-var mapHeight = 1200;
+var zoom = 1;
+var mapWidth = 1200 * zoom;
+var mapHeight = 1200 * zoom;
 var DEBUG = location.hash == '#DEBUG';
 
 var $map = document.getElementById('map');
@@ -58,20 +62,8 @@ $eMap.height = halfHeight;
 
 // 3D stuff
 var container = document.getElementById('container');
-var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 2000);
-camera.position.z = 500;
-var scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
-var texture = new THREE.CanvasTexture($eMap);
-texture.minFilter = THREE.LinearFilter; // Fix "Textures should be of a power of two" warning
-var geometry = new THREE.SphereGeometry(200, 30, 30);
-var material = new THREE.MeshBasicMaterial({
-  overdraw: .5, // fill in the gaps between triangles
-});
-var mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
-
 var renderer = new THREE.WebGLRenderer({
+  alpha: true,
   antialias: true,
   stencil: false,
 });
@@ -81,9 +73,12 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.context.getShaderInfoLog = function(){ return '' };
 container.appendChild(renderer.domElement);
 
+// Camera
+var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 2000);
+camera.position.z = 500;
 var CameraControls = cameraControlsFactory(THREE);
 var cameraControls = new CameraControls(camera, renderer.domElement);
-cameraControls.rotate(0, -.8, true); // Tilt down to show North pole a bit
+cameraControls.rotate(0, -1, true); // Tilt down to show North pole a bit
 cameraControls.update();
 
 // Hack cameraControls to have min & max distance
@@ -93,6 +88,20 @@ cameraControls.dolly = function(distance, enableTransition){
   if (d < 18 || d > 60) return;
   _dolly.call(cameraControls, distance, enableTransition);
 }
+
+// Scene
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+// Earth
+var texture = new THREE.CanvasTexture($eMap);
+texture.minFilter = THREE.LinearFilter; // Fix "Textures should be of a power of two" warning
+var geometry = new THREE.SphereGeometry(200, 50, 50);
+var material = new THREE.MeshBasicMaterial({
+  overdraw: .5, // fill in the gaps between triangles
+});
+var mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
 
 // Stats: https://github.com/mrdoob/stats.js
 if (DEBUG){
@@ -128,7 +137,6 @@ function animate(){
   render();
   if (DEBUG) stats.update();
 }
-animate();
 
 // Projections stuff
 var equirectangular = d3.geoEquirectangular()
@@ -142,12 +150,15 @@ var invert = equirectangular.invert;
 var context = $eMap.getContext('2d', { alpha: false });
 function generateMap(style){
   console.log('Generate map: ' + style);
+  $styleSelector.disabled = true;
+  $loader.hidden = false;
+
   var map = new mapboxgl.Map({
     container: 'map',
     // optimize=true -> https://blog.mapbox.com/style-optimized-vector-tiles-39868da81275
     style: 'mapbox://styles/mapbox/' + style + '-v9?optimize=true',
     center: [0, 0],
-    zoom: 1,
+    zoom: zoom,
     interactive: false,
     renderWorldCopies: false,
     attributionControl: false,
@@ -160,8 +171,6 @@ function generateMap(style){
     var gl = canvas.getContext('webgl', { alpha: false, antialias: false });
 
     console.log('Map loaded');
-    $styleSelector.disabled = true;
-    $loader.hidden = false;
 
     setTimeout(function(){
       console.log('Render map start');
@@ -234,6 +243,7 @@ function generateMap(style){
       if (!material.map){
         material.map = texture;
         material.needsUpdate = true;
+        animate();
       }
       // Update texture
       texture.needsUpdate = true;
