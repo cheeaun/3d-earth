@@ -45,3 +45,4 @@ Resources
 - https://github.com/tizzle/aframe-orbit-controls-component
 - https://github.com/mrdoob/three.js/issues/9716
 - https://stackoverflow.com/questions/7156971/webgl-readpixels-is-always-returning-0-0-0-0
+- https://mapzen.com/blog/escape-from-mercator/
