@@ -101,11 +101,16 @@ scene.background = new THREE.Color(0x000000);
 var texture = new THREE.CanvasTexture($eMap);
 texture.minFilter = THREE.LinearFilter; // Fix "Textures should be of a power of two" warning
 var geometry = new THREE.SphereGeometry(200, 50, 50);
-var material = new THREE.MeshBasicMaterial({
+var material = new THREE.MeshPhongMaterial({
   overdraw: .5, // fill in the gaps between triangles
 });
 var mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
+
+// Light
+var light = new THREE.DirectionalLight(0xffffff);
+light.target = mesh;
+scene.add(light);
 
 // Stats: https://github.com/mrdoob/stats.js
 if (DEBUG){
@@ -133,6 +138,7 @@ function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
   if (!stopRotating) mesh.rotation.y += .001;
+  light.position.copy(camera.position);
   renderer.render(scene, camera);
 }
 
