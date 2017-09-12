@@ -21,6 +21,7 @@ footer a { color: inherit; }
   0% { opacity: .3 }
   100% { opacity: 1 }
 }
+.fullscreen #style-selector, .fullscreen footer { display: none; }
 </style>
 <div id="map"></div>
 <canvas id="equirectangular-map"></canvas>
@@ -277,6 +278,10 @@ function generateMap(style){
   });
 };
 generateMap('satellite');
+
+$styleSelector.ondblclick = $styleSelector.ongestureend = function(){
+  document.body.classList.toggle('fullscreen');
+}
 
 // Debugging
 if (DEBUG){
