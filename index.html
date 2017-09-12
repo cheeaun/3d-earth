@@ -107,6 +107,17 @@ var material = new THREE.MeshPhongMaterial({
 var mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
+// Stars
+var starsGeometry = new THREE.SphereGeometry(1000);
+var starsMaterial = new THREE.MeshBasicMaterial({
+  side: THREE.BackSide,
+});
+var stars = new THREE.Mesh(starsGeometry, starsMaterial);
+scene.add(stars);
+(new THREE.TextureLoader()).load('galaxystarfield.png', function(texture){
+  starsMaterial.map = texture;
+});
+
 // Light
 var light = new THREE.DirectionalLight(0xffffff);
 light.target = mesh;
@@ -137,7 +148,10 @@ const clock = new THREE.Clock();
 function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
-  if (!stopRotating) mesh.rotation.y += .001;
+  if (!stopRotating){
+    mesh.rotation.y += .001;
+    stars.rotation.y -= .0005;
+  }
   light.position.copy(camera.position);
   renderer.render(scene, camera);
 }
