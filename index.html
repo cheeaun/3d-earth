@@ -11,7 +11,9 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; }
 .DEBUG #map, .DEBUG #equirectangular-map { opacity: 1; }
 #map { bottom: 0; transform: scale(.1); transform-origin: bottom right; }
 #equirectangular-map { transform: scale(.1); transform-origin: top right; }
-#style-selector { position: absolute; top: 10px; right: 10px; z-index: 99999; }
+#options { position: absolute; top: 10px; right: 10px; z-index: 99999; text-align: right; }
+#options[hidden] { display: block; opacity: .5; pointer-events: none; }
+#options select, #options label { padding: .5em; display: inline-block; vertical-align: middle; }
 #container canvas { vertical-align: top; }
 #container > div { bottom: 0; top: auto !important; }
 footer { position: absolute; bottom: 10px; right: 10px; opacity: .75; }
@@ -21,18 +23,22 @@ footer a { color: inherit; }
   0% { opacity: .3 }
   100% { opacity: 1 }
 }
-.fullscreen #style-selector, .fullscreen footer { display: none; }
+.fullscreen #options, .fullscreen footer { display: none; }
 </style>
 <div id="map"></div>
 <canvas id="equirectangular-map"></canvas>
 <div id="container"></div>
 <div id="loader">Loading&hellip;</div>
-<select id="style-selector" onChange="generateMap(this.value)">
-  <option value="satellite" selected>Satellite</option>
-  <option value="streets">Streets</option>
-  <option value="dark">Dark</option>
-  <option value="light">Light</option>
-</select>
+<div id="options">
+  <select id="style-selector" onChange="generateMap(this.value)">
+    <option value="satellite" selected>Satellite</option>
+    <option value="streets">Streets</option>
+    <option value="dark">Dark</option>
+    <option value="light">Light</option>
+  </select>
+  <br>
+  <label><input type="checkbox" id="cloud-checkbox" onChange="toggleClouds(this.checked)"> Clouds</label>
+</div>
 <footer>
   <a href="https://github.com/cheeaun/3d-earth" target="_blank">Learn more on GitHub</a>
 </footer>
@@ -52,7 +58,7 @@ var DEBUG = location.hash == '#DEBUG';
 var $map = document.getElementById('map');
 var $eMap = document.getElementById('equirectangular-map');
 var $loader = document.getElementById('loader');
-var $styleSelector = document.getElementById('style-selector');
+var $options = document.getElementById('options');
 
 $map.style.width = mapWidth + 'px';
 $map.style.height = mapHeight + 'px';
@@ -105,8 +111,24 @@ var geometry = new THREE.SphereGeometry(200, 50, 50);
 var material = new THREE.MeshPhongMaterial({
   overdraw: .5, // fill in the gaps between triangles
 });
-var mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+var earth = new THREE.Mesh(geometry, material);
+scene.add(earth);
+
+// Clouds
+var cloudMaterial = new THREE.MeshLambertMaterial({
+  opacity: 0.8,
+  transparent: true,
+});
+var cloud = new THREE.Mesh(geometry, cloudMaterial);
+cloud.visible = false;
+(new THREE.TextureLoader()).load('clouds_2048.jpg', function(texture){
+  cloudMaterial.alphaMap = texture;
+});
+earth.add(cloud);
+
+function toggleClouds(checked){
+  cloud.visible = checked;
+};
 
 // Stars
 var starsGeometry = new THREE.SphereGeometry(1000);
@@ -121,7 +143,7 @@ scene.add(stars);
 
 // Light
 var light = new THREE.DirectionalLight(0xffffff);
-light.target = mesh;
+light.target = earth;
 scene.add(light);
 
 // Stats: https://github.com/mrdoob/stats.js
@@ -150,8 +172,9 @@ function render(){
   var delta = clock.getDelta();
   cameraControls.update(delta);
   if (!stopRotating){
-    mesh.rotation.y += .001;
-    stars.rotation.y -= .0005;
+    var y = .001;
+    earth.rotation.y += y;
+    stars.rotation.y -= y/2;
   }
   light.position.copy(camera.position);
   renderer.render(scene, camera);
@@ -175,7 +198,7 @@ var invert = equirectangular.invert;
 var context = $eMap.getContext('2d', { alpha: false });
 function generateMap(style){
   console.log('Generate map: ' + style);
-  $styleSelector.disabled = true;
+  $options.hidden = true;
   $loader.hidden = false;
 
   var map = new mapboxgl.Map({
@@ -261,7 +284,7 @@ function generateMap(style){
 
       console.log('Render map end');
 
-      $styleSelector.disabled = false;
+      $options.hidden = false;
       $loader.hidden = true;
 
       // Set texture on first load
@@ -279,7 +302,7 @@ function generateMap(style){
 };
 generateMap('satellite');
 
-$styleSelector.ondblclick = $styleSelector.ongestureend = function(){
+$options.ondblclick = $options.ongestureend = function(){
   document.body.classList.toggle('fullscreen');
 }
 

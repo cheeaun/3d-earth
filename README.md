@@ -26,6 +26,11 @@ Todos (Contributions welcomed!)
 - [ ] Better performance with the raster reprojection
 - [ ] Less CPU usage
 
+Credits
+---
+
+Cloud image from <http://xplanetclouds.com/free/>.
+
 Resources
 ---
 
